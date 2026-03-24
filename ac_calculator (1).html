@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AC Project Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1a; --surface: #111827; --surface2: #1a2235; --surface3: #0e1520;
+    --border: #1f2e47; --accent: #00d4ff; --accent2: #0099bb;
+    --green: #00e5a0; --amber: #ffb547; --red: #ff4f6a; --purple: #a78bfa;
+    --text: #e8f0fe; --muted: #6b7fa3; --heading: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .container { position: relative; z-index: 1; max-width: 1020px; margin: 0 auto; padding: 44px 24px 100px; }
+  /* Header */
+  .header { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 44px; }
+  .header-icon { width: 54px; height: 54px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 0 32px rgba(0,212,255,0.28); }
+  .header-text h1 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--heading); letter-spacing: -0.03em; line-height: 1.1; }
+  .header-text p { color: var(--muted); font-size: 0.75rem; margin-top: 5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  /* Tabs */
+  .tab-nav { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 28px; width: fit-content; }
+  .tab-btn { background: transparent; border: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; padding: 8px 18px; border-radius: 8px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.06em; }
+  .tab-btn.active { background: var(--accent); color: #000; }
+  .tab-btn:hover:not(.active) { color: var(--text); background: var(--surface2); }
+  .panel { display: none; } .panel.active { display: block; }
+  /* Card */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; margin-bottom: 18px; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), transparent); opacity: 0.35; }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  /* Form */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  input, select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.85rem; padding: 9px 13px; transition: border-color 0.2s, box-shadow 0.2s; outline: none; width: 100%; }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
+  select option { background: var(--surface2); }
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; transition: all 0.18s; }
+  .btn-accent { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #000; }
+  .btn-accent:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,255,0.3); }
+  .btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(255,79,106,0.1); border: 1px solid rgba(255,79,106,0.2); color: var(--red); }
+  .btn-danger:hover { background: rgba(255,79,106,0.2); }
+  .btn-green { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); color: var(--green); }
+  .btn-green:hover { background: rgba(0,229,160,0.2); }
+  .btn-sm { padding: 5px 10px; font-size: 0.68rem; }
+  .calc-btn { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 12px; color: #000; font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 24px rgba(0,212,255,0.18); margin-top: 6px; }
+  .calc-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 30px rgba(0,212,255,0.32); }
+  /* System Sets */
+  .set-block { background: var(--surface3); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+  .set-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .set-label { font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .set-badge { font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; background: rgba(0,212,255,0.1); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+  .set-badge.multi { background: rgba(167,139,250,0.1); color: var(--purple); }
+  .outdoor-row { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: end; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .row-tag { font-size: 0.58rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 22px; }
+  .indoor-rows { display: flex; flex-direction: column; gap: 8px; }
+  .indoor-row { display: grid; grid-template-columns: 36px 1fr 110px auto; gap: 10px; align-items: end; }
+  .row-num { width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--muted); margin-bottom: 0; flex-shrink: 0; }
+  .add-indoor-btn { margin-top: 10px; width: 100%; background: transparent; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted); padding: 8px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; transition: all 0.18s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .add-indoor-btn:hover { border-color: var(--accent); color: var(--accent); }
+  /* Price input wrappers */
+  .piw { position: relative; display: flex; align-items: center; }
+  .piw .sym { position: absolute; left: 10px; color: var(--muted); font-size: 0.78rem; pointer-events: none; }
+  .piw input { padding-left: 22px; }
+  .piw.pct .sym { left: auto; right: 10px; }
+  .piw.pct input { padding-left: 13px; padding-right: 26px; }
+  /* Custom items */
+  .custom-item-row { display: grid; grid-template-columns: 1fr 140px auto; gap: 10px; align-items: end; margin-bottom: 8px; }
+  /* Results */
+  .results-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  .result-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+  .result-card.highlight { background: linear-gradient(135deg, rgba(0,212,255,0.07), rgba(0,212,255,0.02)); border-color: rgba(0,212,255,0.28); }
+  .result-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
+  .result-value { font-family: 'Syne', sans-serif; font-size: 1.35rem; font-weight: 800; color: var(--heading); }
+  .result-card.highlight .result-value { color: var(--accent); }
+  .result-sub { font-size: 0.65rem; color: var(--muted); margin-top: 3px; }
+  /* Breakdown */
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .breakdown th { text-align: left; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 0 0 10px; border-bottom: 1px solid var(--border); }
+  .breakdown td { padding: 8px 0; border-bottom: 1px solid rgba(31,46,71,0.35); }
+  .breakdown .cat-label { color: var(--muted); font-size: 0.76rem; }
+  .breakdown .sub-label { color: var(--muted); font-size: 0.71rem; padding-left: 14px; opacity: 0.75; }
+  .breakdown .amount { text-align: right; font-weight: 500; color: var(--text); }
+  .breakdown .total-row td { border-top: 1px solid var(--border); padding-top: 14px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; color: var(--heading); }
+  .breakdown .total-row .amount { color: var(--green); font-size: 1rem; }
+  .section-head-row td { padding-top: 14px !important; padding-bottom: 4px !important; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.78rem; color: var(--text); border-bottom: none !important; }
+  /* Bars */
+  .percent-bar-wrap { margin-bottom: 9px; }
+  .percent-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 5px; }
+  .percent-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.6s ease; width: 0%; }
+  /* Misc */
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .badge-blue { background: rgba(0,212,255,0.1); color: var(--accent); }
+  .badge-green { background: rgba(0,229,160,0.1); color: var(--green); }
+  .badge-purple { background: rgba(167,139,250,0.1); color: var(--purple); }
+  .divider { height: 1px; background: var(--border); margin: 18px 0; }
+  .project-summary { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; padding: 14px 18px; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); }
+  .summary-item { display: flex; flex-direction: column; gap: 2px; }
+  .s-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .s-val { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--heading); font-size: 0.88rem; }
+  /* Config table */
+  .cfg-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .cfg-table th { text-align: left; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 0 10px 10px; border-bottom: 1px solid var(--border); }
+  .cfg-table th:first-child { padding-left: 0; }
+  .cfg-table td { padding: 8px 10px; border-bottom: 1px solid rgba(31,46,71,0.4); vertical-align: middle; }
+  .cfg-table td:first-child { padding-left: 0; }
+  .cfg-table tr:last-child td { border-bottom: none; }
+  .cfg-table input, .cfg-table select { padding: 6px 10px; font-size: 0.8rem; }
+  .model-name-cell { font-family: 'Syne', sans-serif; font-weight: 600; color: var(--heading); }
+  .empty-cfg { padding: 24px; text-align: center; color: var(--muted); font-size: 0.78rem; border: 1px dashed var(--border); border-radius: 10px; }
+  .tip { font-size: 0.7rem; color: var(--muted); margin-top: -10px; margin-bottom: 16px; line-height: 1.5; }
+  @media (max-width: 640px) {
+    .form-row.four { grid-template-columns: 1fr 1fr; }
+    .results-grid { grid-template-columns: 1fr 1fr; }
+    .outdoor-row { grid-template-columns: 36px 1fr auto; }
+    .indoor-row { grid-template-columns: 36px 1fr 80px auto; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-icon">❄️</div>
+    <div class="header-text">
+      <h1>AC Project Calculator</h1>
+      <p>System sets · Multi-zone · Instant pricing</p>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('estimate',this)">Estimate</button>
+    <button class="tab-btn" onclick="switchTab('config',this)">Model Config</button>
+    <button class="tab-btn" onclick="switchTab('rates',this)">Rates</button>
+  </div>
+
+  <!-- ══════════════ ESTIMATE TAB ══════════════ -->
+  <div class="panel active" id="panel-estimate">
+
+    <div class="card">
+      <div class="card-title">Project Details</div>
+      <div class="form-row">
+        <div class="field"><label>Project Name</label><input type="text" id="projectName" placeholder="e.g. Office Block A"></div>
+        <div class="field"><label>Client / Site</label><input type="text" id="clientName" placeholder="e.g. ABC Company"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">AC System Sets</div>
+      <p class="tip">Each set = 1 outdoor unit + 1 or more indoor units. Single-zone = 1 indoor. Multi-zone = 2+ indoors.</p>
+      <div id="setsContainer"></div>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:4px;" onclick="addSet()">+ Add System Set</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Additional / Custom Items</div>
+      <p class="tip" id="customTip" style="display:none;"></p>
+      <div id="customItemsContainer"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addCustomItem()" style="margin-top:4px;">+ Add Custom Item</button>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">⚡ Calculate Project Price</button>
+    <div id="results" style="margin-top:22px;"></div>
+  </div>
+
+  <!-- ══════════════ MODEL CONFIG TAB ══════════════ -->
+  <div class="panel" id="panel-config">
+
+    <div class="card">
+      <div class="card-title">Indoor Unit Models</div>
+      <p class="tip">Configure indoor unit models by brand and BTU. These will be selectable in the Estimate tab.</p>
+      <div id="indoorModelsList"></div>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Add New Indoor Model</div>
+        <div class="form-row four">
+          <div class="field"><label>Brand</label>
+            <select id="ni_brand">
+              <option value="daikin">Daikin</option>
+              <option value="mitsubishi">Mitsubishi</option>
+              <option value="gree">Gree</option>
+            </select>
+          </div>
+          <div class="field"><label>BTU</label>
+            <select id="ni_btu">
+              <option value="9000">9,000 BTU</option>
+              <option value="12000">12,000 BTU</option>
+              <option value="18000">18,000 BTU</option>
+              <option value="24000">24,000 BTU</option>
+              <option value="36000">36,000 BTU</option>
+            </select>
+          </div>
+          <div class="field"><label>Model No.</label><input type="text" id="ni_model" placeholder="e.g. FTXS35"></div>
+          <div class="field"><label>Price ($)</label><div class="piw"><span class="sym">$</span><input type="number" id="ni_price" placeholder="0" min="0"></div></div>
+        </div>
+        <button class="btn btn-green btn-sm" onclick="addIndoorModel()">+ Add Indoor Model</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Outdoor Unit Models</div>
+      <p class="tip">Configure outdoor unit models by brand and BTU capacity.</p>
+      <div id="outdoorModelsList"></div>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Add New Outdoor Model</div>
+        <div class="form-row four">
+          <div class="field"><label>Brand</label>
+            <select id="no_brand">
+              <option value="daikin">Daikin</option>
+              <option value="mitsubishi">Mitsubishi</option>
+              <option value="gree">Gree</option>
+            </select>
+          </div>
+          <div class="field"><label>BTU</label>
+            <select id="no_btu">
+              <option value="9000">9,000 BTU</option>
+              <option value="12000">12,000 BTU</option>
+              <option value="18000">18,000 BTU</option>
+              <option value="24000">24,000 BTU</option>
+              <option value="36000">36,000 BTU</option>
+            </select>
+          </div>
+          <div class="field"><label>Model No.</label><input type="text" id="no_model" placeholder="e.g. RXS35"></div>
+          <div class="field"><label>Price ($)</label><div class="piw"><span class="sym">$</span><input type="number" id="no_price" placeholder="0" min="0"></div></div>
+        </div>
+        <button class="btn btn-green btn-sm" onclick="addOutdoorModel()">+ Add Outdoor Model</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════ RATES TAB ══════════════ -->
+  <div class="panel" id="panel-rates">
+
+    <div class="card">
+      <div class="card-title">Installation & Material Rates</div>
+      <table class="cfg-table">
+        <thead><tr><th>Cost Item</th><th>Rate</th><th>Applied Per</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="model-name-cell">Installation Labor</td>
+            <td><div class="piw"><span class="sym">$</span><input type="number" id="rate_labor" value="150" min="0"></div></td>
+            <td><span class="badge badge-blue">per indoor unit</span></td>
+          </tr>
+          <tr>
+            <td class="model-name-cell">Piping / Materials</td>
+            <td><div class="piw"><span class="sym">$</span><input type="number" id="rate_piping" value="80" min="0"></div></td>
+            <td><span class="badge badge-blue">per indoor unit</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Service Fee / Markup</div>
+      <p class="tip">Applied as a percentage on top of equipment + labor + materials subtotal.</p>
+      <div style="max-width:260px;">
+        <div class="field">
+          <label>Service Fee Percentage</label>
+          <div class="piw pct"><input type="number" id="rate_service_pct" value="10" min="0" max="100" step="0.5"><span class="sym">%</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ──────────────────────── DATA ──────────────────────── */
+const BRANDS = { daikin:'Daikin', mitsubishi:'Mitsubishi', gree:'Gree' };
+const BTU_LABELS = { 9000:'9k', 12000:'12k', 18000:'18k', 24000:'24k', 36000:'36k' };
+let catCounter = 200;
+function uid(prefix){ return prefix + '_' + (++catCounter); }
+
+let catalogue = [
+  // Daikin indoor
+  {id:'di1',type:'indoor',brand:'daikin',btu:9000, model:'CTXM09RVJU', price:650},
+  {id:'di2',type:'indoor',brand:'daikin',btu:12000,model:'FTXS12LVJU', price:750},
+  {id:'di3',type:'indoor',brand:'daikin',btu:18000,model:'FTXS18LVJU', price:890},
+  {id:'di4',type:'indoor',brand:'daikin',btu:24000,model:'FTXS24LVJU', price:1050},
+  {id:'di5',type:'indoor',brand:'daikin',btu:36000,model:'FTXS36LVJU', price:1350},
+  // Daikin outdoor
+  {id:'do1',type:'outdoor',brand:'daikin',btu:9000, model:'RXS09LVJU', price:900},
+  {id:'do2',type:'outdoor',brand:'daikin',btu:12000,model:'RXS12LVJU', price:1050},
+  {id:'do3',type:'outdoor',brand:'daikin',btu:18000,model:'RXS18LVJU', price:1200},
+  {id:'do4',type:'outdoor',brand:'daikin',btu:24000,model:'RXS24LVJU', price:1400},
+  {id:'do5',type:'outdoor',brand:'daikin',btu:36000,model:'RXS36LVJU', price:1750},
+  // Mitsubishi indoor
+  {id:'mi1',type:'indoor',brand:'mitsubishi',btu:9000, model:'MSZ-GL09NA', price:700},
+  {id:'mi2',type:'indoor',brand:'mitsubishi',btu:12000,model:'MSZ-GL12NA', price:820},
+  {id:'mi3',type:'indoor',brand:'mitsubishi',btu:18000,model:'MSZ-GL18NA', price:960},
+  {id:'mi4',type:'indoor',brand:'mitsubishi',btu:24000,model:'MSZ-GL24NA', price:1120},
+  {id:'mi5',type:'indoor',brand:'mitsubishi',btu:36000,model:'MSZ-GL36NA', price:1450},
+  // Mitsubishi outdoor
+  {id:'mo1',type:'outdoor',brand:'mitsubishi',btu:9000, model:'MUZ-GL09NA', price:1000},
+  {id:'mo2',type:'outdoor',brand:'mitsubishi',btu:12000,model:'MUZ-GL12NA', price:1150},
+  {id:'mo3',type:'outdoor',brand:'mitsubishi',btu:18000,model:'MUZ-GL18NA', price:1350},
+  {id:'mo4',type:'outdoor',brand:'mitsubishi',btu:24000,model:'MUZ-GL24NA', price:1580},
+  {id:'mo5',type:'outdoor',brand:'mitsubishi',btu:36000,model:'MUZ-GL36NA', price:1950},
+  // Gree indoor
+  {id:'gi1',type:'indoor',brand:'gree',btu:9000, model:'GWH09AAB', price:420},
+  {id:'gi2',type:'indoor',brand:'gree',btu:12000,model:'GWH12AAB', price:500},
+  {id:'gi3',type:'indoor',brand:'gree',btu:18000,model:'GWH18AAB', price:620},
+  {id:'gi4',type:'indoor',brand:'gree',btu:24000,model:'GWH24AAB', price:750},
+  {id:'gi5',type:'indoor',brand:'gree',btu:36000,model:'GWH36AAB', price:950},
+  // Gree outdoor
+  {id:'go1',type:'outdoor',brand:'gree',btu:9000, model:'GWC09AAB', price:600},
+  {id:'go2',type:'outdoor',brand:'gree',btu:12000,model:'GWC12AAB', price:720},
+  {id:'go3',type:'outdoor',brand:'gree',btu:18000,model:'GWC18AAB', price:880},
+  {id:'go4',type:'outdoor',brand:'gree',btu:24000,model:'GWC24AAB', price:1050},
+  {id:'go5',type:'outdoor',brand:'gree',btu:36000,model:'GWC36AAB', price:1280},
+];
+
+let setCounter = 0;
+let customCounter = 0;
+let indoorRowCounters = {};
+
+/* ──────────────────────── HELPERS ──────────────────────── */
+function fmt(n){ return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtBtu(b){ return BTU_LABELS[b]||(b/1000)+'k'; }
+function getModels(type,brand){ return catalogue.filter(m=>m.type===type&&m.brand===brand); }
+
+function buildModelOptions(type, brand, selectedId){
+  const models = getModels(type, brand);
+  if(!models.length) return `<option value="">— No models configured —</option>`;
+  return models.map(m=>`<option value="${m.id}" ${m.id===selectedId?'selected':''} data-price="${m.price}">[${fmtBtu(m.btu)}] ${m.model} — $${m.price.toLocaleString()}</option>`).join('');
+}
+
+/* ──────────────────────── SETS ──────────────────────── */
+function addSet(){
+  const id = ++setCounter;
+  indoorRowCounters[id] = 0;
+
+  const div = document.createElement('div');
+  div.className = 'set-block';
+  div.id = `set_${id}`;
+  div.innerHTML = `
+    <div class="set-header">
+      <div class="set-label">Set #${id} <span class="set-badge" id="badge_${id}">Single Zone</span></div>
+      <button class="btn btn-danger btn-sm" onclick="removeSet(${id})">✕ Remove</button>
+    </div>
+    <div class="form-row" style="max-width:220px;margin-bottom:14px;">
+      <div class="field"><label>Brand</label>
+        <select id="brand_${id}" onchange="onBrandChange(${id})">
+          <option value="daikin">Daikin</option>
+          <option value="mitsubishi">Mitsubishi</option>
+          <option value="gree">Gree</option>
+        </select>
+      </div>
+    </div>
+    <div class="outdoor-row">
+      <div class="row-tag">ODU</div>
+      <div class="field"><label>Outdoor Unit Model</label>
+        <select id="od_${id}">${buildModelOptions('outdoor','daikin','')}</select>
+      </div>
+      <div style="width:90px;"><label style="font-size:0.65rem;color:var(--muted);display:block;margin-bottom:5px;">Qty</label>
+        <input type="number" value="1" min="1" max="1" style="text-align:center;" readonly title="One outdoor unit per set">
+      </div>
+    </div>
+    <div class="indoor-rows" id="indoors_${id}"></div>
+    <button class="add-indoor-btn" onclick="addIndoorUnit(${id})">＋ Add Indoor Unit</button>
+  `;
+  document.getElementById('setsContainer').appendChild(div);
+  addIndoorUnit(id); // auto-add first indoor
+}
+
+function removeSet(id){
+  document.getElementById(`set_${id}`)?.remove();
+}
+
+function onBrandChange(setId){
+  const brand = document.getElementById(`brand_${setId}`).value;
+  // Update outdoor dropdown
+  document.getElementById(`od_${setId}`).innerHTML = buildModelOptions('outdoor', brand, '');
+  // Update all indoor dropdowns
+  document.querySelectorAll(`#indoors_${setId} .indoor-model-sel`).forEach(sel => {
+    sel.innerHTML = buildModelOptions('indoor', brand, '');
+  });
+}
+
+function addIndoorUnit(setId){
+  const rowId = ++indoorRowCounters[setId];
+  const brand = document.getElementById(`brand_${setId}`)?.value || 'daikin';
+
+  const div = document.createElement('div');
+  div.className = 'indoor-row';
+  div.id = `inrow_${setId}_${rowId}`;
+  div.dataset.rowid = rowId;
+  div.innerHTML = `
+    <div style="display:flex;align-items:flex-end;padding-bottom:9px;">
+      <div class="row-num">${rowId}</div>
+    </div>
+    <div class="field"><label>Indoor Unit Model</label>
+      <select class="indoor-model-sel" id="in_${setId}_${rowId}" onchange="updateBadge(${setId})">${buildModelOptions('indoor', brand, '')}</select>
+    </div>
+    <div class="field"><label>Qty</label>
+      <input type="number" id="inqty_${setId}_${rowId}" value="1" min="1" style="text-align:center;" onchange="updateBadge(${setId})">
+    </div>
+    <div style="padding-bottom:1px;">
+      <button class="btn btn-danger btn-sm" onclick="removeIndoorUnit(${setId},${rowId})">✕</button>
+    </div>
+  `;
+  document.getElementById(`indoors_${setId}`).appendChild(div);
+  updateBadge(setId);
+}
+
+function removeIndoorUnit(setId, rowId){
+  document.getElementById(`inrow_${setId}_${rowId}`)?.remove();
+  updateBadge(setId);
+}
+
+function updateBadge(setId){
+  const count = document.querySelectorAll(`#indoors_${setId} .indoor-row`).length;
+  const badge = document.getElementById(`badge_${setId}`);
+  if(!badge) return;
+  if(count <= 1){ badge.textContent='Single Zone'; badge.className='set-badge'; }
+  else { badge.textContent=`Multi Zone (${count})`; badge.className='set-badge multi'; }
+}
+
+/* ──────────────────────── CUSTOM ITEMS ──────────────────────── */
+function addCustomItem(){
+  const id = ++customCounter;
+  const div = document.createElement('div');
+  div.className = 'custom-item-row';
+  div.id = `ci_${id}`;
+  div.innerHTML = `
+    <div class="field"><label>Description</label>
+      <input type="text" id="ci_name_${id}" placeholder="e.g. Permit fee, Crane hire, Warranty…">
+    </div>
+    <div class="field"><label>Amount ($)</label>
+      <div class="piw"><span class="sym">$</span><input type="number" id="ci_price_${id}" value="0" min="0"></div>
+    </div>
+    <div style="padding-bottom:1px;">
+      <button class="btn btn-danger btn-sm" onclick="document.getElementById('ci_${id}').remove()">✕</button>
+    </div>
+  `;
+  document.getElementById('customItemsContainer').appendChild(div);
+}
+
+/* ──────────────────────── MODEL CONFIG ──────────────────────── */
+function renderModelLists(){
+  renderModelTable('indoor','indoorModelsList');
+  renderModelTable('outdoor','outdoorModelsList');
+}
+
+function renderModelTable(type, containerId){
+  const el = document.getElementById(containerId);
+  const models = catalogue.filter(m=>m.type===type);
+  if(!models.length){ el.innerHTML=`<div class="empty-cfg">No ${type} models yet. Add one below.</div>`; return; }
+  el.innerHTML = `<table class="cfg-table">
+    <thead><tr><th>Brand</th><th>BTU</th><th>Model No.</th><th>Price</th><th></th></tr></thead>
+    <tbody>${models.map(m=>`
+      <tr>
+        <td><span class="badge badge-blue">${BRANDS[m.brand]}</span></td>
+        <td><span class="badge badge-purple">${fmtBtu(m.btu)} BTU</span></td>
+        <td class="model-name-cell">${m.model}</td>
+        <td>${fmt(m.price)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteModel('${m.id}')">✕</button></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function addIndoorModel(){
+  const brand = document.getElementById('ni_brand').value;
+  const btu = parseInt(document.getElementById('ni_btu').value);
+  const model = document.getElementById('ni_model').value.trim();
+  const price = parseFloat(document.getElementById('ni_price').value)||0;
+  if(!model){ alert('Please enter a model number.'); return; }
+  catalogue.push({id:uid('im'), type:'indoor', brand, btu, model, price});
+  document.getElementById('ni_model').value='';
+  document.getElementById('ni_price').value='';
+  renderModelLists();
+  refreshAllSetDropdowns();
+}
+
+function addOutdoorModel(){
+  const brand = document.getElementById('no_brand').value;
+  const btu = parseInt(document.getElementById('no_btu').value);
+  const model = document.getElementById('no_model').value.trim();
+  const price = parseFloat(document.getElementById('no_price').value)||0;
+  if(!model){ alert('Please enter a model number.'); return; }
+  catalogue.push({id:uid('om'), type:'outdoor', brand, btu, model, price});
+  document.getElementById('no_model').value='';
+  document.getElementById('no_price').value='';
+  renderModelLists();
+  refreshAllSetDropdowns();
+}
+
+function deleteModel(id){
+  catalogue = catalogue.filter(m=>m.id!==id);
+  renderModelLists();
+  refreshAllSetDropdowns();
+}
+
+function refreshAllSetDropdowns(){
+  document.querySelectorAll('.set-block').forEach(setEl => {
+    const setId = parseInt(setEl.id.replace('set_',''));
+    const brand = document.getElementById(`brand_${setId}`)?.value||'daikin';
+    const odSel = document.getElementById(`od_${setId}`);
+    if(odSel){ const cur=odSel.value; odSel.innerHTML=buildModelOptions('outdoor',brand,''); if(catalogue.find(m=>m.id===cur)) odSel.value=cur; }
+    setEl.querySelectorAll('.indoor-model-sel').forEach(sel=>{
+      const cur=sel.value; sel.innerHTML=buildModelOptions('indoor',brand,'');
+      if(catalogue.find(m=>m.id===cur)) sel.value=cur;
+    });
+  });
+}
+
+/* ──────────────────────── CALCULATE ──────────────────────── */
+function calculate(){
+  const projectName = document.getElementById('projectName').value||'Untitled Project';
+  const clientName = document.getElementById('clientName').value||'—';
+  const rateLabor = parseFloat(document.getElementById('rate_labor').value)||0;
+  const ratePiping = parseFloat(document.getElementById('rate_piping').value)||0;
+  const servicePct = parseFloat(document.getElementById('rate_service_pct').value)||0;
+
+  const setEls = document.querySelectorAll('.set-block');
+  if(!setEls.length){ showError('Add at least one system set to calculate.'); return; }
+
+  let setResults = [];
+  let totalIndoorCount = 0, totalOutdoorCost = 0, totalIndoorCost = 0;
+
+  for(const setEl of setEls){
+    const setId = parseInt(setEl.id.replace('set_',''));
+    const brand = document.getElementById(`brand_${setId}`)?.value||'';
+    const odSel = document.getElementById(`od_${setId}`);
+    const odModelId = odSel?.value;
+    const odModel = catalogue.find(m=>m.id===odModelId);
+    const odPrice = odModel?odModel.price:0;
+    const odLabel = odModel?`[${fmtBtu(odModel.btu)}] ${odModel.model}`:'(no outdoor model)';
+
+    const indoorRows = setEl.querySelectorAll('.indoor-row');
+    let setIndoors=[], setIndoorCost=0, setIndoorCount=0;
+    indoorRows.forEach(row=>{
+      const rowId = row.dataset.rowid;
+      const inSel = document.getElementById(`in_${setId}_${rowId}`);
+      const inQtyEl = document.getElementById(`inqty_${setId}_${rowId}`);
+      const inModelId = inSel?.value;
+      const inQty = parseInt(inQtyEl?.value)||1;
+      const inModel = catalogue.find(m=>m.id===inModelId);
+      const inPrice = inModel?inModel.price:0;
+      const inLabel = inModel?`[${fmtBtu(inModel.btu)}] ${inModel.model}`:'(no indoor model)';
+      setIndoors.push({label:inLabel, qty:inQty, price:inPrice, total:inPrice*inQty});
+      setIndoorCost += inPrice*inQty;
+      setIndoorCount += inQty;
+    });
+
+    setResults.push({setId, brand:BRANDS[brand]||brand, odLabel, odPrice, indoors:setIndoors, setIndoorCost, setIndoorCount});
+    totalIndoorCount += setIndoorCount;
+    totalOutdoorCost += odPrice;
+    totalIndoorCost += setIndoorCost;
+  }
+
+  const equipTotal = totalIndoorCost + totalOutdoorCost;
+  const laborTotal = rateLabor * totalIndoorCount;
+  const pipingTotal = ratePiping * totalIndoorCount;
+  const preService = equipTotal + laborTotal + pipingTotal;
+  const serviceTotal = preService * (servicePct/100);
+
+  let customLines=[], customTotal=0;
+  document.querySelectorAll('.custom-item-row').forEach(row=>{
+    const m = row.id.match(/ci_(\d+)/);
+    if(!m) return;
+    const cid = m[1];
+    const name = document.getElementById(`ci_name_${cid}`)?.value||'Custom Item';
+    const price = parseFloat(document.getElementById(`ci_price_${cid}`)?.value)||0;
+    customLines.push({name, price});
+    customTotal += price;
+  });
+
+  const grandTotal = preService + serviceTotal + customTotal;
+
+  // Build HTML
+  const setRowsHTML = setResults.map((s,i)=>`
+    <tr><td colspan="4" style="padding-top:${i>0?'16px':'6px'};padding-bottom:3px;border-bottom:none;">
+      <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;color:var(--accent);">Set #${s.setId} — ${s.brand}</span>
+      <span class="badge badge-${s.indoors.length>1?'purple':'blue'}" style="margin-left:8px;">${s.indoors.length>1?`Multi Zone (${s.indoors.length})`:'Single Zone'}</span>
+    </td></tr>
+    <tr><td class="sub-label">↳ Outdoor: ${s.odLabel}</td><td>1</td><td>${fmt(s.odPrice)}</td><td class="amount">${fmt(s.odPrice)}</td></tr>
+    ${s.indoors.map(ind=>`<tr><td class="sub-label">↳ Indoor: ${ind.label}</td><td>${ind.qty}</td><td>${fmt(ind.price)}</td><td class="amount">${fmt(ind.total)}</td></tr>`).join('')}
+  `).join('');
+
+  const customHTML = customLines.map(c=>`<tr><td class="cat-label">${c.name}</td><td>—</td><td>—</td><td class="amount">${fmt(c.price)}</td></tr>`).join('');
+
+  const pE = grandTotal>0?(equipTotal/grandTotal*100).toFixed(1):0;
+  const pL = grandTotal>0?(laborTotal/grandTotal*100).toFixed(1):0;
+  const pP = grandTotal>0?(pipingTotal/grandTotal*100).toFixed(1):0;
+  const pS = grandTotal>0?(serviceTotal/grandTotal*100).toFixed(1):0;
+  const pC = grandTotal>0?(customTotal/grandTotal*100).toFixed(1):0;
+
+  document.getElementById('results').innerHTML = `
+  <div class="card" style="border-color:rgba(0,229,160,0.22);">
+    <div class="card-title">Project Summary</div>
+    <div class="project-summary">
+      <div class="summary-item"><span class="s-label">Project</span><span class="s-val">${projectName}</span></div>
+      <div class="summary-item"><span class="s-label">Client</span><span class="s-val">${clientName}</span></div>
+      <div class="summary-item"><span class="s-label">Sets</span><span class="s-val">${setResults.length}</span></div>
+      <div class="summary-item"><span class="s-label">Indoor Units</span><span class="s-val">${totalIndoorCount}</span></div>
+      <div class="summary-item"><span class="s-label">Outdoor Units</span><span class="s-val">${setResults.length}</span></div>
+      <div class="summary-item"><span class="s-label">Service Fee</span><span class="s-val">${servicePct}%</span></div>
+    </div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-label">Equipment Cost</div>
+        <div class="result-value">${fmt(equipTotal)}</div>
+        <div class="result-sub">${totalIndoorCount} indoor · ${setResults.length} outdoor</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">Labor & Materials</div>
+        <div class="result-value">${fmt(laborTotal+pipingTotal)}</div>
+        <div class="result-sub">Install + piping</div>
+      </div>
+      <div class="result-card highlight">
+        <div class="result-label">Grand Total</div>
+        <div class="result-value">${fmt(grandTotal)}</div>
+        <div class="result-sub">All-in · ${servicePct}% service fee applied</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:14px;">Itemised Breakdown</div>
+    <table class="breakdown">
+      <thead><tr><th>Item</th><th>Qty</th><th>Unit Rate</th><th class="amount">Amount</th></tr></thead>
+      <tbody>
+        <tr><td colspan="4" class="section-head-row" style="padding-top:8px;padding-bottom:3px;border-bottom:none;">Equipment</td></tr>
+        ${setRowsHTML}
+        <tr><td colspan="4" style="padding:6px 0;border-bottom:none;"></td></tr>
+        <tr><td colspan="4" class="section-head-row" style="padding-bottom:3px;border-bottom:none;">Installation</td></tr>
+        <tr><td class="cat-label">Installation Labor</td><td>${totalIndoorCount}</td><td>${fmt(rateLabor)}</td><td class="amount">${fmt(laborTotal)}</td></tr>
+        <tr><td class="cat-label">Piping / Materials</td><td>${totalIndoorCount}</td><td>${fmt(ratePiping)}</td><td class="amount">${fmt(pipingTotal)}</td></tr>
+        <tr><td class="cat-label">Service Fee / Markup</td><td>—</td><td>${servicePct}% on subtotal</td><td class="amount">${fmt(serviceTotal)}</td></tr>
+        ${customLines.length?`
+        <tr><td colspan="4" style="padding:6px 0;border-bottom:none;"></td></tr>
+        <tr><td colspan="4" class="section-head-row" style="padding-bottom:3px;border-bottom:none;">Additional Items</td></tr>
+        ${customHTML}`:''}
+      </tbody>
+      <tfoot>
+        <tr class="total-row"><td colspan="3">Grand Total</td><td class="amount">${fmt(grandTotal)}</td></tr>
+      </tfoot>
+    </table>
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:14px;">Cost Distribution</div>
+    ${buildBar('Equipment',pE)}
+    ${buildBar('Installation Labor',pL)}
+    ${buildBar('Piping / Materials',pP)}
+    ${buildBar('Service Fee',pS)}
+    ${customLines.length?buildBar('Additional Items',pC):''}
+  </div>`;
+
+  setTimeout(()=>{
+    document.querySelectorAll('.percent-bar-fill').forEach(el=>{ el.style.width=el.dataset.width+'%'; });
+  },50);
+}
+
+function showError(msg){
+  document.getElementById('results').innerHTML=`<div class="card" style="border-color:rgba(255,79,106,0.3);"><div style="color:var(--red);font-size:0.85rem;text-align:center;padding:14px;">⚠️ ${msg}</div></div>`;
+}
+
+function buildBar(label, pct){
+  return `<div class="percent-bar-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">${label}</span>
+      <span style="font-size:0.7rem;color:var(--text);">${pct}%</span>
+    </div>
+    <div class="percent-bar"><div class="percent-bar-fill" data-width="${pct}" style="width:0%;"></div></div>
+  </div>`;
+}
+
+/* ──────────────────────── TABS ──────────────────────── */
+function switchTab(tab, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  btn.classList.add('active');
+  if(tab==='config') renderModelLists();
+}
+
+/* ──────────────────────── INIT ──────────────────────── */
+addSet();
+</script>
+</body>
+</html>
